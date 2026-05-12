@@ -282,6 +282,36 @@ function addWrappedPdfText(doc, text, x, y, maxWidth, lineHeight, options = {}) 
   return cursorY;
 }
 
+
+function loadScriptOnce(src, globalCheck) {
+  return new Promise((resolve, reject) => {
+    if (globalCheck && globalCheck()) return resolve();
+    const existing = Array.from(document.scripts).find((script) => script.src === src);
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', reject, { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureJsPdfReady() {
+  if (window.jspdf?.jsPDF || window.jsPDF) return true;
+  try {
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', () => window.jspdf?.jsPDF || window.jsPDF);
+    return Boolean(window.jspdf?.jsPDF || window.jsPDF);
+  } catch (error) {
+    console.error('Gagal memuat jsPDF:', error);
+    return false;
+  }
+}
+
 function generateReportWithJsPdf(payload) {
   const JsPdfCtor = window.jspdf?.jsPDF || window.jsPDF;
   if (!JsPdfCtor) return false;
@@ -397,6 +427,7 @@ function generateReportWithJsPdf(payload) {
 }
 
 async function downloadGameOverReportPdf() {
+  document.body.classList.add('report-open', 'game-over-open');
   updateHandStatsPanel();
   const report = document.getElementById('hand-stats');
   if (report) report.classList.add('show');
@@ -412,6 +443,7 @@ async function downloadGameOverReportPdf() {
 
   try {
     const payload = getPdfReportPayload();
+    await ensureJsPdfReady();
     const ok = generateReportWithJsPdf(payload);
     if (!ok) {
       throw new Error('jsPDF tidak tersedia dari html2pdf bundle.');
