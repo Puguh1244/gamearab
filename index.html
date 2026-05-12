@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Petualangan Huruf Arab - Media Belajar Interaktif Anak</title>
+<link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+<div id="app-container">
+
+  <!-- CAMERA LAYER -->
+  <div id="camera-container">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="hand-canvas"></canvas>
+  </div>
+
+  <!-- PHASER GAME LAYER -->
+  <div id="game-canvas-wrapper"></div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-card" id="hud-lives">
+      <div class="hud-label">KESEMPATAN</div>
+      <div class="hud-value" id="hud-lives-val">💖💖💖</div>
+    </div>
+    <div class="hud-card" id="hud-level">
+      <div class="hud-label">LEVEL</div>
+      <div class="hud-value" id="hud-level-val">1 / 5</div>
+    </div>
+    <div class="hud-card" id="hud-score">
+      <div class="hud-label">NAJM ⭐</div>
+      <div class="hud-value" id="hud-score-val">0</div>
+    </div>
+    <div class="hud-card" id="hud-timer">
+      <div class="hud-label">WAKTU</div>
+      <div class="hud-value" id="hud-timer-val">60</div>
+    </div>
+    <button class="back-btn" id="back-to-menu-btn" type="button">← Kembali</button>
+    <button class="assist-btn" id="hint-btn" type="button">Bantuan 💡</button>
+  </div>
+
+  <!-- QUESTION -->
+  <div id="question-box">
+    <div id="question-label">مغامرة العربية</div>
+    <div id="question-text">Cari huruf ج</div>
+  </div>
+
+  <!-- ANSWER SLOTS -->
+  <div id="answer-bar"></div>
+
+  <!-- HAND STATUS -->
+  <div id="hand-status">
+    <div class="hand-pill" id="left-hand-pill">👈 Tangan Kiri</div>
+    <div class="hand-pill" id="right-hand-pill">👉 Tangan Kanan</div>
+  </div>
+
+  <!-- CAM PREVIEW -->
+  <div id="cam-preview">
+    <video autoplay playsinline muted id="cam-preview-video"></video>
+    <canvas id="cam-preview-canvas"></canvas>
+  </div>
+
+  <!-- FEEDBACK OVERLAY -->
+  <div id="feedback-overlay">
+    <div id="feedback-text"></div>
+  </div>
+
+  <!-- LEVEL COMPLETE -->
+  <div id="level-complete">
+    <div class="lc-card">
+      <h2>🌙 ممتاز!</h2>
+      <p id="lc-word">Huruf: ج</p>
+      <p id="lc-score">+50 Najm!</p>
+      <div class="end-actions">
+        <button class="action-btn" id="menu-from-level-btn" type="button">← Ke Menu</button>
+        <button class="action-btn" id="next-btn" type="button">Lanjut Belajar →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRY AGAIN -->
+  <div id="game-over">
+    <div class="go-card">
+      <h2>🌙 Ayo Latihan Lagi!</h2>
+      <p id="go-score">Najm Kamu: 0</p>
+      <div id="hand-stats">
+        <h3>📊 Laporan Observasi Belajar</h3>
+        <div class="report-grid">
+          <div class="report-card">
+            <div class="report-card-title">👈 Tangan Kiri</div>
+            <div class="report-big-number" id="stat-left-grabs">0</div>
+            <div class="stat-row"><span>Benar</span><span id="stat-left-correct">0</span></div>
+            <div class="stat-row"><span>Salah</span><span id="stat-left-wrong">0</span></div>
+            <div class="stat-row"><span>Akurasi</span><span id="stat-left-accuracy">0%</span></div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-title">👉 Tangan Kanan</div>
+            <div class="report-big-number" id="stat-right-grabs">0</div>
+            <div class="stat-row"><span>Benar</span><span id="stat-right-correct">0</span></div>
+            <div class="stat-row"><span>Salah</span><span id="stat-right-wrong">0</span></div>
+            <div class="stat-row"><span>Akurasi</span><span id="stat-right-accuracy">0%</span></div>
+          </div>
+        </div>
+        <div class="stat-row"><span>⭐ Pola interaksi dominan</span><span id="stat-dominant-hand">-</span></div>
+        <div class="stat-row"><span>🎯 Total tangkapan</span><span id="stat-total-grabs">0</span></div>
+        <div class="stat-row"><span>👤 Siswa</span><span id="stat-student-name">Siswa</span></div>
+        <div class="stat-row"><span>🎮 Materi & Mode</span><span id="stat-play-mode">Belajar</span></div>
+        <div class="stat-row"><span>🔤 Materi perlu penguatan</span><span id="stat-weak-letters">-</span></div>
+        <div class="stat-row"><span>💡 Bantuan dipakai</span><span id="stat-hints-used">0</span></div>
+        <div class="stat-row"><span>⏱️ Rata-rata waktu per level</span><span id="stat-average-level-time">0 dtk</span></div>
+        <div class="stat-note" id="stat-learning-note">Belum ada data.</div>
+        <div class="kap-report-section">
+          <h4>🧠 Analisis Kognitif</h4>
+          <p id="stat-cognitive-note">Belum ada data kognitif.</p>
+        </div>
+        <div class="kap-report-section">
+          <h4>💛 Analisis Afektif</h4>
+          <p id="stat-affective-note">Belum ada data afektif.</p>
+        </div>
+        <div class="kap-report-section">
+          <h4>✋ Analisis Psikomotorik</h4>
+          <p id="stat-psychomotor-note">Belum ada data psikomotorik.</p>
+        </div>
+        <div class="kap-report-section">
+          <h4>🎯 Rekomendasi Latihan</h4>
+          <p id="stat-recommendation-note">Belum ada rekomendasi.</p>
+        </div>
+        <div class="report-disclaimer">Catatan: laporan ini bukan diagnosis psikologis/medis. Ini adalah observasi belajar otomatis berdasarkan data permainan.</div>
+      </div>
+      <div class="end-actions">
+        <button class="action-btn report-btn" id="report-btn" type="button">Lihat Analisis 📊</button>
+        <button class="action-btn pdf-btn" id="download-report-btn" type="button">Download PDF 📄</button>
+        <button class="action-btn teacher-dashboard-btn" id="open-dashboard-from-gameover-btn" type="button">Dashboard Penilaian</button>
+        <button class="action-btn" id="menu-from-gameover-btn" type="button">← Ke Menu</button>
+        <button class="action-btn" id="restart-btn" type="button">Ulangi Latihan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING / ONBOARDING SCREEN -->
+  <div id="loading-screen">
+    <header class="home-nav" aria-label="Navigasi utama">
+      <div class="brand-mark">
+        <div class="brand-icon">ابت</div>
+        <div>
+          <strong>Petualangan</strong>
+          <span>Huruf Arab</span>
+        </div>
+      </div>
+      <nav class="home-links" aria-label="Menu halaman">
+        <button class="nav-pill active" type="button" data-scroll-target="home-top">Beranda</button>
+        <button class="nav-pill" type="button" data-scroll-target="learning-section">Mulai</button>
+        <button class="nav-pill" type="button" id="open-teacher-tools-nav-btn">Tambah Soal</button>
+        <button class="nav-pill" type="button" id="open-dashboard-top-btn">Dashboard Penilaian</button>
+      </nav>
+    </header>
+
+    <main class="home-page">
+      <section id="home-top" class="home-hero" aria-label="Pembuka Petualangan Huruf Arab">
+        <div class="hero-copy">
+          <div class="hero-badge">Belajar • Bermain • Berprestasi</div>
+          <h1>Petualangan <span>Huruf Arab</span></h1>
+          <p class="hero-subtitle">
+            Game edukasi untuk membantu siswa mengenal huruf Arab dengan cara sederhana, interaktif, dan menyenangkan.
+          </p>
+          <div class="hero-actions">
+            <button id="hero-start-scroll-btn" type="button" class="primary-start-btn" data-scroll-target="learning-section">
+              <span class="btn-hand">▶</span> Mulai Belajar
+            </button>
+            <button id="open-dashboard-btn" class="secondary-dashboard-btn" type="button">
+              Dashboard Penilaian <small>Akses dengan PIN</small>
+            </button>
+          </div>
+          <p class="safe-note">  </p>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <img src="./assets/santri-hero.png" alt="" />
+        </div>
+      </section>
+
+      <section class="purpose-section" aria-label="Tujuan game">
+        <div class="section-heading centered-heading">
+          <p>Tujuan Game</p>
+          <h2>Membantu siswa belajar huruf Arab dengan lebih aktif</h2>
+        </div>
+        <div class="purpose-grid">
+          <article>
+            <h3>Mengenal Huruf Arab</h3>
+            <p>Siswa belajar mengenali bentuk huruf hijaiyah, sambung huruf, kosakata Arab, dan penggalan ayat secara bertahap.</p>
+          </article>
+          <article>
+            <h3>Belajar Lewat Gerakan</h3>
+            <p>Interaksi gestur tangan membuat pembelajaran lebih hidup, tidak hanya melihat layar atau menghafal secara pasif.</p>
+          </article>
+          <article>
+            <h3>Pemantauan Nilai</h3>
+            <p>Guru dapat melihat hasil belajar siswa melalui dashboard penilaian, termasuk skor, akurasi, dan materi yang perlu dilatih ulang.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="how-section" aria-label="Cara bermain">
+        <div class="section-heading centered-heading">
+          <p>Cara Bermain</p>
+          <h2>Alur sederhana untuk memulai sesi belajar</h2>
+        </div>
+        <div class="how-steps">
+          <article><span>1</span><h3>Isi Data Siswa</h3><p>Masukkan nama dan kelas agar laporan hasil belajar tersimpan dengan rapi.</p></article>
+          <article><span>2</span><h3>Pilih Materi</h3><p>Pilih Hijaiyah, Sambung Huruf, Kosakata Arab, Penggalan Ayat, atau Campuran.</p></article>
+          <article><span>3</span><h3>Tangkap Jawaban</h3><p>Gunakan gestur tangan atau mode mouse untuk memilih huruf yang benar.</p></article>
+          <article><span>4</span><h3>Lihat Hasil</h3><p>Setelah selesai, sistem menampilkan nilai dan laporan perkembangan belajar.</p></article>
+        </div>
+      </section>
+
+      <section class="feature-band" aria-label="Fitur utama">
+        <article>
+          <span class="feature-icon">ا</span>
+          <div>
+            <h3>Belajar Interaktif</h3>
+            <p>Latihan huruf Arab dibuat seperti permainan agar siswa lebih mudah fokus.</p>
+          </div>
+        </article>
+        <article>
+          <span class="feature-icon">▶</span>
+          <div>
+            <h3>Mulai Sesi</h3>
+            <p>Siswa memilih nama, kelas, materi, dan mode sebelum bermain.</p>
+          </div>
+        </article>
+        <article>
+          <span class="feature-icon">＋</span>
+          <div>
+            <h3>Tambah Soal</h3>
+            <p>Guru dapat menambah dan menghapus soal setelah membuka akses PIN.</p>
+          </div>
+        </article>
+        <article>
+          <span class="feature-icon">▥</span>
+          <div>
+            <h3>Dashboard Penilaian</h3>
+            <p>Guru memantau nilai, akurasi, riwayat sesi, dan perkembangan siswa.</p>
+          </div>
+        </article>
+      </section>
+
+      <section id="learning-section" class="learning-section" aria-label="Mulai sesi belajar">
+        <div class="section-heading">
+          <p>Mulai Sesi</p>
+          <h2>Pilih materi lalu mulai bermain</h2>
+        </div>
+        <div class="setup-grid inline-setup-grid">
+          <div class="setup-field">
+            <label for="student-name-input">Nama siswa</label>
+            <input id="student-name-input" maxlength="24" placeholder="Contoh: Adit" value="Siswa" />
+          </div>
+          <div class="setup-field">
+            <label for="student-class-input">Kelas / Kelompok</label>
+            <input id="student-class-input" maxlength="32" placeholder="Contoh: TPQ A" value="Kelas Umum" />
+          </div>
+          <div class="setup-field">
+            <label for="voice-toggle">Suara</label>
+            <select id="voice-toggle">
+              <option value="sfx" selected>Bunyi saja</option>
+              <option value="narration">Narasi pelan</option>
+              <option value="off">Nonaktif</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="learning-chip" id="question-count-chip">Materi Arab siap</div>
+        <div class="track-options" aria-label="Pilih materi belajar">
+          <button class="track-btn active" data-track="hijaiyah">Hijaiyah<br><small>ا ب ت ث ج</small></button>
+          <button class="track-btn" data-track="joining">Sambung Huruf<br><small>ج، جـ، ـجـ، ـج</small></button>
+          <button class="track-btn" data-track="vocabulary">Kosakata Arab<br><small>benda, tempat, sifat, warna</small></button>
+          <button class="track-btn" data-track="ayat">Penggalan Ayat<br><small>pilih huruf yang hilang</small></button>
+          <button class="track-btn" data-track="mixed">Campuran<br><small>materi lengkap</small></button>
+        </div>
+
+        <div class="vocab-panel" id="vocab-panel">
+          <div class="learning-chip">Sub-bab kosakata</div>
+          <div class="vocab-options" aria-label="Pilih sub-bab kosakata Arab">
+            <button class="vocab-btn active" data-vocab="nouns">Kata Benda</button>
+            <button class="vocab-btn" data-vocab="places">Tempat</button>
+            <button class="vocab-btn" data-vocab="adjectives">Kata Sifat</button>
+            <button class="vocab-btn" data-vocab="colors">Warna</button>
+            <button class="vocab-btn" data-vocab="animals">Hewan</button>
+            <button class="vocab-btn" data-vocab="body">Anggota Tubuh</button>
+          </div>
+        </div>
+
+        <div class="learning-chip">Pilih cara bermain</div>
+        <div class="mode-options" aria-label="Pilih mode bermain">
+          <button class="mode-btn active" data-mode="learn">Belajar<br><small>tanpa timer & tanpa hukuman</small></button>
+          <button class="mode-btn" data-mode="practice">Latihan<br><small>bantuan adaptif aktif</small></button>
+          <button class="mode-btn" data-mode="challenge">Kompetisi<br><small>timer, poin, kesempatan</small></button>
+        </div>
+
+        <div class="setup-actions integrated-actions">
+          <button id="start-btn" type="button" class="start-session-btn">Mulai Sesi dengan Kamera</button>
+          <button id="mouse-only-btn" type="button">Main Tanpa Kamera</button>
+        </div>
+      </section>
+
+      <section id="teacher-tools-section" class="teacher-panel inline-teacher-panel" hidden aria-label="Tambah soal guru">
+        <div class="section-heading small">
+          <p>Tambah Soal</p>
+          <h2>Kelola soal Bahasa Arab</h2>
+        </div>
+        <p class="teacher-helper-text">Halaman ini digunakan guru untuk menambah atau menghapus soal. Akses dibuka setelah PIN benar.</p>
+        <div class="teacher-form-grid teacher-form-grid-arabic">
+          <select id="teacher-type-input" title="Jenis materi">
+            <option value="vocabulary">Kosakata Arab</option>
+            <option value="hijaiyah">Pengenalan Hijaiyah</option>
+            <option value="joining">Sambung Huruf</option>
+            <option value="ayat">Penggalan Ayat</option>
+          </select>
+          <select id="teacher-subchapter-input" title="Sub-bab kosakata">
+            <option value="nouns">Kata benda</option>
+            <option value="places">Tempat</option>
+            <option value="adjectives">Kata sifat</option>
+            <option value="colors">Warna</option>
+            <option value="animals">Hewan</option>
+            <option value="body">Anggota tubuh</option>
+            <option value="general">Umum</option>
+          </select>
+          <select id="teacher-difficulty-input">
+            <option value="easy">Mudah</option>
+            <option value="medium">Sedang</option>
+            <option value="hard">Sulit</option>
+          </select>
+        </div>
+        <div class="teacher-form-grid teacher-form-grid-arabic second-row">
+          <input id="teacher-question-input" placeholder="Pertanyaan, misal: Apa bahasa Arab dari buku?" />
+          <input id="teacher-answer-input" class="arabic-input" dir="rtl" placeholder="Jawaban Arab, misal: كتاب" maxlength="20" />
+          <button class="small-action-btn" id="add-question-btn" type="button">Tambah Soal</button>
+        </div>
+        <div class="question-bank-list">
+          <div class="question-bank-title">
+            <h3>Daftar Soal Tambahan</h3>
+            <span id="question-bank-total">0 soal</span>
+          </div>
+          <div id="question-bank-items" class="question-bank-items">
+            <p class="question-bank-empty">Belum ada soal tambahan.</p>
+          </div>
+        </div>
+      </section>
+
+      <footer class="home-footer">
+        <div>
+          <strong>Petualangan Huruf Arab</strong>
+          <p>Media belajar huruf Arab interaktif berbasis gestur tangan untuk anak-anak dan santri.</p>
+        </div>
+        <span>Interaktif</span>
+        <span>Aman & Edukatif</span>
+        <span>Untuk Siswa dan Guru</span>
+      </footer>
+    </main>
+
+    <div id="protected-pin-modal" class="protected-pin-modal" aria-hidden="true">
+      <div class="protected-pin-card" role="dialog" aria-modal="true" aria-labelledby="protected-pin-title">
+        <button type="button" id="protected-pin-close" class="protected-pin-close" aria-label="Tutup">×</button>
+        <h3 id="protected-pin-title">Akses Guru</h3>
+        <p id="protected-pin-copy">Masukkan PIN guru untuk membuka fitur ini.</p>
+        <div class="protected-pin-form">
+          <input id="protected-pin-input" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="PIN Guru" />
+          <button id="protected-pin-submit" type="button">Masuk</button>
+        </div>
+        <small id="protected-pin-status">PIN hanya untuk Tambah Soal dan Dashboard Penilaian.</small>
+      </div>
+    </div>
+
+    <div id="loading-status" aria-hidden="true"></div>
+    <div class="loading-bar-bg">
+      <div class="loading-bar-fill" id="loading-bar"></div>
+    </div>
+    <div id="setup-toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- TEACHER DASHBOARD -->
+  <div id="teacher-dashboard" aria-hidden="true">
+    <div class="dashboard-shell" role="dialog" aria-modal="true" aria-labelledby="dashboard-title">
+      <div class="dashboard-header">
+        <div>
+          <p class="dashboard-eyebrow">Akses Khusus Guru</p>
+          <h2 id="dashboard-title">Dashboard Penilaian</h2>
+          <p class="dashboard-subtitle">Pantau nilai, akurasi, progres belajar, dan riwayat permainan siswa.</p>
+        </div>
+        <button class="dashboard-close" id="close-dashboard-btn" type="button" aria-label="Tutup dashboard">×</button>
+      </div>
+
+      <section class="dashboard-pin-gate" id="dashboard-pin-gate" aria-label="Masukkan PIN dashboard penilaian">
+        <div class="pin-shield">🔒</div>
+        <div class="pin-gate-copy">
+          <h3>Akses Dashboard Penilaian</h3>
+          <p>Masukkan PIN guru untuk membuka dashboard penilaian siswa.</p>
+        </div>
+        <div class="dashboard-pin-form">
+          <input id="dashboard-pin-input" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="PIN Guru" aria-describedby="dashboard-pin-status" />
+          <button id="dashboard-pin-submit" type="button">Masuk</button>
+          <small id="dashboard-pin-status">Dashboard penilaian hanya dapat diakses oleh guru.</small>
+        </div>
+      </section>
+
+      <div class="dashboard-main-content" id="dashboard-main-content" aria-hidden="true">
+        <div class="dashboard-toolbar">
+          <input id="dashboard-search" type="search" placeholder="Cari nama siswa, kelas, atau materi..." />
+          <select id="dashboard-filter-class" title="Filter kelas">
+            <option value="all">Semua kelas</option>
+          </select>
+          <button class="dashboard-action" id="dashboard-refresh-btn" type="button">Refresh</button>
+          <button class="dashboard-action" id="dashboard-export-btn" type="button">Export CSV</button>
+          <button class="dashboard-action danger" id="dashboard-clear-local-btn" type="button">Hapus Lokal</button>
+        </div>
+
+        <div class="dashboard-summary-grid">
+          <div class="dashboard-summary-card"><span>Total sesi</span><strong id="dash-total-sessions">0</strong></div>
+          <div class="dashboard-summary-card"><span>Jumlah siswa</span><strong id="dash-total-students">0</strong></div>
+          <div class="dashboard-summary-card"><span>Rata-rata akurasi</span><strong id="dash-average-accuracy">0%</strong></div>
+          <div class="dashboard-summary-card"><span>Rata-rata skor</span><strong id="dash-average-score">0</strong></div>
+        </div>
+
+        <div class="dashboard-content-grid">
+          <section class="dashboard-panel">
+            <div class="dashboard-panel-title">
+              <h3>Riwayat Permainan</h3>
+              <span id="dash-data-source">Data lokal</span>
+            </div>
+            <div class="dashboard-table-wrap">
+              <table class="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Waktu</th>
+                    <th>Siswa</th>
+                    <th>Kelas</th>
+                    <th>Materi</th>
+                    <th>Skor</th>
+                    <th>Akurasi</th>
+                    <th>Perlu Penguatan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-table-body">
+                  <tr><td colspan="8" class="dashboard-empty">Belum ada data permainan.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <aside class="dashboard-panel dashboard-detail" id="dashboard-detail-panel">
+            <h3>Detail Perkembangan</h3>
+            <div id="dashboard-detail-content" class="dashboard-empty-detail">Pilih salah satu riwayat permainan untuk melihat perkembangan siswa.</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LIBRARIES & APP SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="./js/game-data.js"></script>
+<script src="./js/game-state.js"></script>
+<script src="./js/hand-state.js"></script>
+<script src="./js/game-ui.js"></script>
+<script src="./js/report-ai.js"></script>
+<script src="./js/teacher-dashboard.js"></script>
+<script src="./js/game-scene.js"></script>
+<script src="./js/phaser-config.js"></script>
+<script src="./js/hand-tracking.js"></script>
+<script src="./js/app-init.js"></script>
+<script src="./js/fallback-input.js"></script>
+<script src="./js/events.js"></script>
+<script src="./js/boot.js"></script>
+</body>
+</html>

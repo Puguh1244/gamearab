@@ -1,0 +1,16 @@
+{
+  "name": "petualangan-huruf-arab",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check js/game-data.js && node --check js/game-state.js && node --check js/hand-state.js && node --check js/game-ui.js && node --check js/report-ai.js && node --check js/teacher-dashboard.js && node --check js/game-scene.js && node --check js/phaser-config.js && node --check js/hand-tracking.js && node --check js/app-init.js && node --check js/fallback-input.js && node --check js/events.js && node --check js/boot.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
