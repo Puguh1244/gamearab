@@ -6,14 +6,3 @@
   from = "/api/analyze-report"
   to = "/.netlify/functions/analyze-report"
   status = 200
-
-[[redirects]]
-  from = "/api/reports"
-  to = "/.netlify/functions/reports"
-  status = 200
-
-[[redirects]]
-  from = "/api/reports/*"
-  to = "/.netlify/functions/reports/:splat"
-  status = 200
-

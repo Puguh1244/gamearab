@@ -230,7 +230,7 @@ function renderTeacherDashboard() {
   renderDashboardSummary(reports);
   renderDashboardTable(reports);
   document.getElementById('dash-data-source').textContent = teacherDashboardLoaded
-    ? 'Data lokal + Supabase/Server jika tersedia'
+    ? 'Data lokal + server jika tersedia'
     : 'Data lokal';
 
   const selected = teacherDashboardReports.find(item => getReportId(item) === teacherDashboardSelectedId) || reports[0] || null;
