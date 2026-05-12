@@ -229,18 +229,179 @@ function buildPdfReportElement() {
   return root;
 }
 
+function getPdfReportPayload() {
+  updateHandStatsPanel();
+  return {
+    generatedAt: new Date().toLocaleString('id-ID', {
+      day: '2-digit', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    }),
+    studentName: getReportText('stat-student-name', GameState.studentName || 'Siswa'),
+    className: GameState.studentClass || 'Kelas Umum',
+    score: getReportText('go-score', `Najm Kamu: ${GameState.score}`).replace('Najm Kamu:', '').trim() || String(GameState.score),
+    playMode: getReportText('stat-play-mode', '-'),
+    totalGrabs: getReportText('stat-total-grabs', '-'),
+    leftAccuracy: getReportText('stat-left-accuracy', '-'),
+    rightAccuracy: getReportText('stat-right-accuracy', '-'),
+    dominantHand: getReportText('stat-dominant-hand', '-'),
+    hintsUsed: getReportText('stat-hints-used', '-'),
+    averageLevelTime: getReportText('stat-average-level-time', '-'),
+    weakLetters: getReportText('stat-weak-letters', '-'),
+    sections: [
+      ['Ringkasan Belajar', getReportText('stat-learning-note', 'Belum ada ringkasan.')],
+      ['Analisis Kognitif', getReportText('stat-cognitive-note', 'Belum ada data kognitif.')],
+      ['Analisis Afektif', getReportText('stat-affective-note', 'Belum ada data afektif.')],
+      ['Analisis Psikomotorik', getReportText('stat-psychomotor-note', 'Belum ada data psikomotorik.')],
+      ['Rekomendasi Latihan', getReportText('stat-recommendation-note', 'Belum ada rekomendasi.')]
+    ]
+  };
+}
+
+function getSafePdfText(value) {
+  return String(value ?? '-')
+    .replace(/\s+/g, ' ')
+    .trim() || '-';
+}
+
+function addWrappedPdfText(doc, text, x, y, maxWidth, lineHeight, options = {}) {
+  const lines = doc.splitTextToSize(getSafePdfText(text), maxWidth);
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let cursorY = y;
+
+  lines.forEach((line) => {
+    if (cursorY > pageHeight - 18) {
+      doc.addPage();
+      cursorY = 18;
+      if (options.fontSize) doc.setFontSize(options.fontSize);
+      if (options.textColor) doc.setTextColor(...options.textColor);
+    }
+    doc.text(line, x, cursorY);
+    cursorY += lineHeight;
+  });
+
+  return cursorY;
+}
+
+function generateReportWithJsPdf(payload) {
+  const JsPdfCtor = window.jspdf?.jsPDF || window.jsPDF;
+  if (!JsPdfCtor) return false;
+
+  const doc = new JsPdfCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  let y = 16;
+
+  doc.setFillColor(15, 118, 110);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 34, 4, 4, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('PETUALANGAN HURUF ARAB', margin + 7, y + 9);
+  doc.setFontSize(18);
+  doc.text('Laporan Observasi Belajar Siswa', margin + 7, y + 19);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`Dibuat otomatis pada ${payload.generatedAt}`, margin + 7, y + 28);
+  y += 44;
+
+  const metrics = [
+    ['Siswa', payload.studentName],
+    ['Kelas/Kelompok', payload.className],
+    ['Skor', payload.score],
+    ['Materi & Mode', payload.playMode],
+    ['Total Tangkapan', payload.totalGrabs],
+    ['Akurasi Kiri', payload.leftAccuracy],
+    ['Akurasi Kanan', payload.rightAccuracy],
+    ['Pola Dominan', payload.dominantHand],
+    ['Bantuan Dipakai', payload.hintsUsed],
+    ['Rata-rata Waktu/Level', payload.averageLevelTime]
+  ];
+
+  const colW = (pageWidth - margin * 2 - 6) / 2;
+  const rowH = 15;
+  doc.setTextColor(31, 51, 71);
+  metrics.forEach(([label, value], i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = margin + col * (colW + 6);
+    const boxY = y + row * (rowH + 4);
+    doc.setDrawColor(219, 232, 247);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x, boxY, colW, rowH, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(label.toUpperCase(), x + 4, boxY + 5);
+    doc.setFontSize(9);
+    doc.setTextColor(30, 58, 95);
+    doc.text(doc.splitTextToSize(getSafePdfText(value), colW - 8).slice(0, 2), x + 4, boxY + 11);
+  });
+  y += Math.ceil(metrics.length / 2) * (rowH + 4) + 3;
+
+  doc.setFillColor(255, 247, 223);
+  doc.setDrawColor(248, 214, 109);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 12, 2, 2, 'FD');
+  doc.setTextColor(101, 66, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text(`Materi perlu penguatan: ${getSafePdfText(payload.weakLetters)}`, margin + 4, y + 8);
+  y += 20;
+
+  payload.sections.forEach(([title, body]) => {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    if (y > pageHeight - 45) {
+      doc.addPage();
+      y = 18;
+    }
+    doc.setDrawColor(219, 232, 247);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 12, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 118, 110);
+    doc.text(title, margin + 4, y + 8);
+    y += 17;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(51, 65, 85);
+    y = addWrappedPdfText(doc, body, margin + 2, y, pageWidth - margin * 2 - 4, 5, {
+      fontSize: 10,
+      textColor: [51, 65, 85]
+    }) + 8;
+  });
+
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (y > pageHeight - 25) {
+    doc.addPage();
+    y = 18;
+  }
+  doc.setDrawColor(203, 213, 225);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 7;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  addWrappedPdfText(
+    doc,
+    'Catatan: laporan ini bukan diagnosis psikologis atau medis. Laporan hanya berisi observasi belajar berdasarkan aktivitas bermain dan dapat digunakan guru/orang tua sebagai bahan pendampingan.',
+    margin,
+    y,
+    pageWidth - margin * 2,
+    4,
+    { fontSize: 8, textColor: [100, 116, 139] }
+  );
+
+  doc.save(buildReportFileName());
+  return true;
+}
+
 async function downloadGameOverReportPdf() {
   updateHandStatsPanel();
   const report = document.getElementById('hand-stats');
   if (report) report.classList.add('show');
   const reportBtn = document.getElementById('report-btn');
   if (reportBtn) reportBtn.textContent = 'Tutup Laporan ✨';
-
-  if (typeof html2pdf === 'undefined') {
-    showSetupToast('Library PDF belum termuat. Gunakan dialog print lalu pilih Save as PDF.', 'error');
-    window.print();
-    return;
-  }
 
   const downloadBtn = document.getElementById('download-report-btn');
   const oldText = downloadBtn ? downloadBtn.textContent : '';
@@ -249,40 +410,17 @@ async function downloadGameOverReportPdf() {
     downloadBtn.textContent = 'Membuat PDF...';
   }
 
-  const pdfRoot = buildPdfReportElement();
-  pdfRoot.style.position = 'fixed';
-  pdfRoot.style.left = '0';
-  pdfRoot.style.top = '0';
-  pdfRoot.style.zIndex = '2147483647';
-  pdfRoot.style.pointerEvents = 'none';
-  document.body.appendChild(pdfRoot);
-
-  const options = {
-    margin: 8,
-    filename: buildReportFileName(),
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#fffdf4',
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: 820
-    },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] }
-  };
-
   try {
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    await html2pdf().set(options).from(pdfRoot).save();
+    const payload = getPdfReportPayload();
+    const ok = generateReportWithJsPdf(payload);
+    if (!ok) {
+      throw new Error('jsPDF tidak tersedia dari html2pdf bundle.');
+    }
   } catch (error) {
     console.error('Gagal membuat PDF:', error);
-    showSetupToast('PDF gagal dibuat otomatis. Gunakan dialog print lalu pilih Save as PDF.', 'error');
+    showSetupToast('PDF gagal dibuat otomatis. Membuka print dialog sebagai cadangan.', 'error');
     window.print();
   } finally {
-    pdfRoot.remove();
     if (downloadBtn) {
       downloadBtn.disabled = false;
       downloadBtn.textContent = oldText || 'Download PDF 📄';
