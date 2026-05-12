@@ -80,7 +80,7 @@ function buildPdfReportElement() {
   const metrics = [
     ['Siswa', getReportText('stat-student-name', GameState.studentName || 'Siswa')],
     ['Kelas/Kelompok', GameState.studentClass || 'Kelas Umum'],
-    ['Skor', getReportText('go-score', `Najm Kamu: ${GameState.score}`).replace('Najm Kamu:', '').trim() || String(GameState.score)],
+    ['Skor', getCleanPdfScore()],
     ['Materi & Mode', getReportText('stat-play-mode')],
     ['Total Tangkapan', getReportText('stat-total-grabs')],
     ['Akurasi Kiri', getReportText('stat-left-accuracy')],
